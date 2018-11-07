@@ -1,0 +1,87 @@
+hm_pump_measurement_speed = 4;
+hm_pump_rinse_speed = 20;
+hm_normal_rinse_time = 10;
+hm_high_rinse_time = 300; # no more than 5 minutes at a time
+hm_sample_time = 200;  # 200
+hm_processing_time = 40;  # 40
+
+if (!hm_run_once)
+{
+    hm_mode = 0; # 0 = single, 1 = continuous, 2 = rinse
+    hm_measurement_count = 0;
+    pump_on = 0;
+    pump_on_buffer = 0;
+    hm_run_once = 1;
+}
+
+if (hm_mode == 0 | hm_mode == 1)
+{
+    if (hm_state == 0)
+    {
+        # pump_on_buffer can only be set to pump_on here
+        pump_on_buffer = pump_on;
+        hm_elapsed_time = 0;
+        pump_speed = 0;
+        hm_state = 0;
+    }
+
+    if (pump_on_buffer & hm_state == 0)
+    {
+        hm_state = 1;
+        hm_elapsed_time = 0;
+    }
+    if (pump_on_buffer & hm_state == 1)
+    {
+        hm_elapsed_time++;
+        pump_speed = hm_pump_measurement_speed;
+        if (hm_elapsed_time > hm_normal_rinse_time)
+        {
+            hm_elapsed_time = 0;
+            VOLTAMMETRY.START();
+            hm_state = 2;
+        }
+    }
+    if (pump_on_buffer & hm_state == 2)
+    {
+        hm_elapsed_time++;
+        pump_speed = hm_pump_measurement_speed;
+        if (hm_elapsed_time > hm_sample_time)
+        {
+            hm_elapsed_time = 0;
+            hm_state = 3;
+            0;
+        }
+    }
+    if (pump_on_buffer & hm_state == 3)
+    {
+        hm_elapsed_time++;
+        pump_speed = 0;
+        if (hm_elapsed_time > hm_processing_time)
+        {
+            hm_elapsed_time = 0;
+            hm_measurement_count++;
+            hm_state = 0;
+            if (hm_mode == 0)
+            {
+                pump_on = 0;
+            }
+        }
+    }
+}
+
+if (hm_mode == 2)  # rinse mode
+{
+    hm_state = 0;
+    if (pump_on & hm_elapsed_time < hm_high_rinse_time) 
+    {
+        pump_speed = hm_pump_rinse_speed;
+        hm_elapsed_time++;
+    }
+    else
+    {
+        pump_speed = 0;
+        hm_elapsed_time = 0;
+    }
+}
+
+pump_speed;
