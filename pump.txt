@@ -1,0 +1,57 @@
+if (!pg_run_once)
+{
+
+    pump_on = 0;
+    hm_mode = 0;
+    pump_revolutions = 0;
+    pg_run_once = 1;
+    count = 0;
+    rise_count = 0;
+    rps = 16.8/60;
+
+    FILTER_TIME = 500/rps; # time required to pump 500ml
+    FILLING_TIME = 5*60; # time required to fill the tubes, 5 min        
+}
+
+pressure = [00T402823];
+
+if( pump_on > 0 )
+{ 
+    pump_rpm = 20;
+    
+
+
+    if( hm_mode == 0){
+        rinse_count = 0;
+        count++;
+        pump_revolutions += rps;
+        if (count >= FILTER_TIME){
+            pump_on = 0;
+            count = 0;
+        }
+    }
+    if( hm_mode == 1){
+        rinse_count = 0;
+        count = 0;
+        pump_revolutions += rps;
+    }
+
+    if( hm_mode == 2){
+        rinse_count++;
+        count = 0;
+        pump_revolutions = 0;
+         
+        if (rinse_count >= FILLING_TIME){
+            pump_on = 0;
+            rinse_count = 0;
+        }
+    }
+}
+else
+{ pump_rpm = 0; }
+
+if (pressure > 3){
+     pump_on = 0;
+}
+
+pump_rpm;
